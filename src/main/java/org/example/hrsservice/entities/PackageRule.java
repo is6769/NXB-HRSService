@@ -36,10 +36,6 @@ public class PackageRule extends CreatedUpdateAtSuperClass {
 
     @Column(name = "unit", nullable = false)
     private String unit;
-//
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "period_type", nullable = false)
-//    private PeriodType periodType;
 
     @Column(name = "condition", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)

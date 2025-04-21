@@ -21,7 +21,7 @@ public class SubscriberTariff {
     private Long id;
 
     @Column(name = "subscriber_id", nullable = false)
-    private Integer subscriberId;
+    private Long subscriberId;
 
 
     @ManyToOne

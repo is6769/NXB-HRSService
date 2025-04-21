@@ -3,6 +3,8 @@ package org.example.hrsservice.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "subscriber_package_usage")
@@ -23,9 +25,9 @@ public class SubscriberPackageUsage extends CreatedUpdateAtSuperClass{
     @JoinColumn(name = "service_package_id")
     private ServicePackage servicePackage;
 
-    private Integer usedAmount;
+    private BigDecimal usedAmount;
 
-    private Integer limitAmount;
+    private BigDecimal limitAmount;
 
     private String unit;
 

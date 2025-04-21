@@ -46,8 +46,8 @@ create table if not exists subscriber_package_usage(
     id                      BIGSERIAL           PRIMARY KEY,
     subscriber_id           BIGINT              NOT NULL,
     service_package_id      BIGINT              NOT NULL REFERENCES service_packages(id),
-    used_amount             INTEGER             NOT NULL,
-    limit_amount            INTEGER             NOT NULL,
+    used_amount             NUMERIC             NOT NULL,
+    limit_amount            NUMERIC             NOT NULL,
     unit                    VARCHAR(100)        NOT NULL,
     created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP

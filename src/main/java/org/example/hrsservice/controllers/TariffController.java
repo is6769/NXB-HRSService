@@ -1,13 +1,15 @@
 package org.example.hrsservice.controllers;
 
 import org.example.hrsservice.dtos.CdrWithMetadataDTO;
+import org.example.hrsservice.dtos.TarifficationBillDTO;
 import org.example.hrsservice.services.TariffService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
-@Controller
+@RestController
 public class TariffController {
 
     private final TariffService tariffService;
@@ -23,8 +25,11 @@ public class TariffController {
     }
 
     @PutMapping("subscribers/{subscriberId}/tariff/{tariffId}")
-    public String setTariffForSubscriber(@PathVariable Long subscriberId, @PathVariable Long tariffId, @RequestParam LocalDateTime currentUnrealDateTime ){
-        tariffService.setTariffForSubscriber(subscriberId,tariffId, currentUnrealDateTime);
-        return "";
+    public TarifficationBillDTO setTariffForSubscriber(
+            @PathVariable Long subscriberId,
+            @PathVariable Long tariffId,
+            @RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime currentUnrealDateTime )
+    {
+        return tariffService.setTariffForSubscriber(subscriberId,tariffId, currentUnrealDateTime);
     }
 }

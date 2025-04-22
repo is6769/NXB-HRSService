@@ -49,6 +49,7 @@ create table if not exists subscriber_package_usage(
     used_amount             NUMERIC             NOT NULL,
     limit_amount            NUMERIC             NOT NULL,
     unit                    VARCHAR(100)        NOT NULL,
+    is_deleted              BOOLEAN             DEFAULT FALSE,
     created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP
 );

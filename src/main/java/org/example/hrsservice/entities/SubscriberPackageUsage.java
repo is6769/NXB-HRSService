@@ -31,5 +31,7 @@ public class SubscriberPackageUsage extends CreatedUpdateAtSuperClass{
 
     private String unit;
 
+    private Boolean isDeleted;
+
 
 }

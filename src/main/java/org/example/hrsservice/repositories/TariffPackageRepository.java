@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface TariffPackageRepository extends JpaRepository<TariffPackage,Long> {
-    List<ServicePackage> findAllByTariff_Id(Long tariffId);
+    List<TariffPackage> findAllByTariff_Id(Long tariffId);
 }

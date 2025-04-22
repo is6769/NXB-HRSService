@@ -2,6 +2,7 @@ package org.example.hrsservice.services;
 
 import jakarta.transaction.Transactional;
 import org.example.hrsservice.dtos.CdrWithMetadataDTO;
+import org.example.hrsservice.dtos.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
 import org.example.hrsservice.repositories.*;
 import org.springframework.stereotype.Service;
@@ -35,14 +36,12 @@ public class TariffService {
     }
 
     @Transactional
-    public BigDecimal setTariffForSubscriber(Long subscriberId, Long tariffId, LocalDateTime currentUnrealDateTime){
-        Tariff newTariff = tariffRepository.findByIdAndIs_activeIsTrue(tariffId).orElseThrow(RuntimeException::new);
+    public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId, LocalDateTime currentUnrealDateTime){
+        Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(RuntimeException::new);
         Optional<SubscriberTariff> currentSubscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId);
         if (currentSubscriberTariff.isPresent()){
-
+            cleanAllSubscriberInfo(subscriberId);
         }
-
-
 
         SubscriberTariff newSubscriberTariff = SubscriberTariff.builder()
                 .tariff(newTariff)
@@ -53,31 +52,43 @@ public class TariffService {
 
         subscriberTariffRepository.save(newSubscriberTariff);
 
-        List<ServicePackage> servicePackages = tariffPackageRepository.findAllByTariff_Id(tariffId);
+        List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_Id(tariffId);
 
-        servicePackages.forEach(servicePackage -> {
-            List<PackageRule> packageRules = packageRuleRepository.findAllByServicePackage_Id(servicePackage.getId());
+        tariffPackages.forEach(tariffPackage -> {
+            List<PackageRule> packageRules = packageRuleRepository.findAllByServicePackage_Id(tariffPackage.getServicePackage().getId());
             for (PackageRule packageRule: packageRules){
                 if (packageRule.getRuleType().equals(RuleType.LIMIT)) {
                     SubscriberPackageUsage subscriberPackageUsage = SubscriberPackageUsage.builder()
                             .subscriberId(subscriberId)
-                            .servicePackage(servicePackage)
+                            .servicePackage(tariffPackage.getServicePackage())
                             .usedAmount(new BigDecimal(0))
                             .limitAmount(packageRule.getValue())
                             .unit(packageRule.getUnit())
+                            .isDeleted(false)
                             .build();
                     subscriberPackageUsageRepository.save(subscriberPackageUsage);
                 }
             }
         });
-        return calculateTariffPackagesPrice(newTariff);
+        return new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.");
+    }
+
+    public void cleanAllSubscriberInfo(Long subscriberId){
+        List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(subscriberId);
+        SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).get();
+        subscriberPackageUsages.forEach(subscriberPackageUsage -> {
+            subscriberPackageUsage.setIsDeleted(true);
+            subscriberPackageUsageRepository.save(subscriberPackageUsage);
+        });
+
+        subscriberTariffRepository.delete(subscriberTariff);
     }
 
     private BigDecimal calculateTariffPackagesPrice(Tariff tariff){
-        List<ServicePackage> servicePackages = tariffPackageRepository.findAllByTariff_Id(tariff.getId());
+        List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_Id(tariff.getId());
         BigDecimal totalCost = new BigDecimal(0);
-        for (ServicePackage servicePackage: servicePackages){
-            List<PackageRule> packageRules = packageRuleRepository.findAllByServicePackage_Id(servicePackage.getId());
+        for (TariffPackage tariffPackage: tariffPackages){
+            List<PackageRule> packageRules = packageRuleRepository.findAllByServicePackage_Id(tariffPackage.getServicePackage().getId());
             for (PackageRule packageRule: packageRules){
                 if (packageRule.getRuleType().equals(RuleType.COST)){
                     totalCost = totalCost.add(packageRule.getValue());

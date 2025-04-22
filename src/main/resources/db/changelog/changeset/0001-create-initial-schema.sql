@@ -61,5 +61,10 @@ create table if not exists tariff_packages(
     priority                INTEGER             NOT NULL,
     created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP
-)
+);
+
+create table if not exists system_datetime(
+    id                      BIGINT              PRIMARY KEY DEFAULT 1 CHECK (id=1),
+    system_datetime         TIMESTAMP           DEFAULT CURRENT_TIMESTAMP - interval '1 year'
+);
 

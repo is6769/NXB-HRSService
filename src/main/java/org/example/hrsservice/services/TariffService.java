@@ -21,14 +21,16 @@ public class TariffService {
     private final TariffPackageRepository tariffPackageRepository;
     private final PackageRuleRepository packageRuleRepository;
     private final SubscriberPackageUsageRepository subscriberPackageUsageRepository;
+    private final SystemDatetimeService systemDatetimeService;
 
-    public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, ServicePackageRepository servicePackageRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository) {
+    public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, ServicePackageRepository servicePackageRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository, SystemDatetimeService systemDatetimeService) {
         this.tariffRepository = tariffRepository;
         this.subscriberTariffRepository = subscriberTariffRepository;
         this.servicePackageRepository = servicePackageRepository;
         this.tariffPackageRepository = tariffPackageRepository;
         this.packageRuleRepository = packageRuleRepository;
         this.subscriberPackageUsageRepository = subscriberPackageUsageRepository;
+        this.systemDatetimeService = systemDatetimeService;
     }
 
     public void tarifficateCdr(CdrWithMetadataDTO cdrWithMetadataDTO) {
@@ -36,7 +38,8 @@ public class TariffService {
     }
 
     @Transactional
-    public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId, LocalDateTime currentUnrealDateTime){
+    public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId){
+        LocalDateTime systemDatetime = systemDatetimeService.getSystemDatetime();
         Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(RuntimeException::new);
         Optional<SubscriberTariff> currentSubscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId);
         if (currentSubscriberTariff.isPresent()){
@@ -46,8 +49,8 @@ public class TariffService {
         SubscriberTariff newSubscriberTariff = SubscriberTariff.builder()
                 .tariff(newTariff)
                 .subscriberId(subscriberId)
-                .cycleStart(currentUnrealDateTime)
-                .cycleEnd(currentUnrealDateTime.plusDays(Long.parseLong(newTariff.getCycleSize().split(" ")[0]))) //TODO make more flexible
+                .cycleStart(systemDatetime)
+                .cycleEnd(systemDatetime.plusDays(Long.parseLong(newTariff.getCycleSize().split(" ")[0]))) //TODO make more flexible
                 .build();
 
         subscriberTariffRepository.save(newSubscriberTariff);

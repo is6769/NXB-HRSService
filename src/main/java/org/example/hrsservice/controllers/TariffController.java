@@ -27,9 +27,9 @@ public class TariffController {
     @PutMapping("subscribers/{subscriberId}/tariff/{tariffId}")
     public TarifficationBillDTO setTariffForSubscriber(
             @PathVariable Long subscriberId,
-            @PathVariable Long tariffId,
-            @RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime currentUnrealDateTime )
+            @PathVariable Long tariffId
+    )
     {
-        return tariffService.setTariffForSubscriber(subscriberId,tariffId, currentUnrealDateTime);
+        return tariffService.setTariffForSubscriber(subscriberId,tariffId);
     }
 }

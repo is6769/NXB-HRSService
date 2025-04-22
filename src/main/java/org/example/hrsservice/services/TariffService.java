@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,9 +35,38 @@ public class TariffService {
         this.systemDatetimeService = systemDatetimeService;
     }
 
-    public void tarifficateCdr(CdrWithMetadataDTO cdrWithMetadataDTO) {
+    public void chargeCdr(CdrWithMetadataDTO cdrWithMetadataDTO) {
+        systemDatetimeService.setSystemDatetime(cdrWithMetadataDTO.finishDateTime());
+        //TODO queues for finished tarification periods bills
+        SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(cdrWithMetadataDTO.cdrMetadata().getSubscriberId()).orElseThrow(RuntimeException::new);
+        Tariff tariff = subscriberTariff.getTariff();
+        List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
+        tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
+        List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(cdrWithMetadataDTO.cdrMetadata().getSubscriberId());
 
+        for (TariffPackage tariffPackage: tariffPackages){
+            List<PackageRule> rules = packageRuleRepository.findAllByServicePackage_Id(tariffPackage.getServicePackage().getId());
+            //check if we have limit, satisfying conditions
+            //if we have so we should find 1 rate satisfying conditions
+            //we always have 1 rate and at more 1 limit(if no limit found this is pominutnii)(for free calls in package we use rate with value:0)
+            PackageRule limitRule = findLimitRuleThatSatisfiesCondition(cdrWithMetadataDTO);
+            if (limitRule==null){//that is pominutnii
+                PackageRule rateRule = findRateRuleThatSatisfiesCondition(cdrWithMetadataDTO);
+                BigDecimal price=calculatePriceAccordingToRule(rateRule,cdrWithMetadataDTO.cdrMetadata().getDurationInMinutes());// this the result return it
+            }else {
+                //here we should whether it can be putted in one limit
+                //if no we should divide it and tarificate by parts
+
+                PackageRule rateRule = findRateRuleThatSatisfiesCondition(cdrWithMetadataDTO);
+                //
+            }
+        }
     }
+
+    private BigDecimal calculatePriceAccordingToRule(PackageRule rateRule, Integer durationInMinutes) {
+        return rateRule.getValue().multiply(new BigDecimal(durationInMinutes));
+    }
+
 
     @Transactional
     public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId){

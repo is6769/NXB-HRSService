@@ -29,12 +29,12 @@ public class ServicePackage extends CreatedUpdateAtSuperClass {
     private ServiceType serviceType;
 
 
-    @OneToMany(mappedBy = "servicePackage")
+    @OneToMany(mappedBy = "servicePackage", fetch = FetchType.LAZY)
     private List<PackageRule> packageRules;
 
-    @OneToMany(mappedBy = "servicePackage")
+    @OneToMany(mappedBy = "servicePackage", fetch = FetchType.LAZY)
     private List<SubscriberPackageUsage> subscriberPackageUsages;
 
-    @OneToMany(mappedBy = "servicePackage")
+    @OneToMany(mappedBy = "servicePackage", fetch = FetchType.LAZY)
     private List<TariffPackage> tariffPackages;
 }

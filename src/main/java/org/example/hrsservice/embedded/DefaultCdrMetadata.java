@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class DefaultCdrMetadata {
+    private Long subscriberId;
     private Integer durationInMinutes;
     private String otherOperator;
 }

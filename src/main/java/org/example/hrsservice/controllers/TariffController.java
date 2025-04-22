@@ -3,11 +3,7 @@ package org.example.hrsservice.controllers;
 import org.example.hrsservice.dtos.CdrWithMetadataDTO;
 import org.example.hrsservice.dtos.TarifficationBillDTO;
 import org.example.hrsservice.services.TariffService;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
 
 @RestController
 public class TariffController {
@@ -19,8 +15,8 @@ public class TariffController {
     }
 
     @PostMapping("tariff")
-    public String tarifficateCdr(CdrWithMetadataDTO cdrWithMetadataDTO){
-        tariffService.tarifficateCdr(cdrWithMetadataDTO);
+    public String chargeCdr(CdrWithMetadataDTO cdrWithMetadataDTO){
+        tariffService.chargeCdr(cdrWithMetadataDTO);
         return "Hello, World";
     }
 

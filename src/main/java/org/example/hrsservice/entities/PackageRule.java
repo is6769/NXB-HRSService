@@ -1,6 +1,7 @@
 package org.example.hrsservice.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -23,6 +24,7 @@ public class PackageRule extends CreatedUpdateAtSuperClass {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonManagedReference
     @ManyToOne
     @JoinColumn(name = "service_package_id")
     private ServicePackage servicePackage;

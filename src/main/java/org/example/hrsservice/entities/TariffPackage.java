@@ -22,6 +22,7 @@ public class TariffPackage extends CreatedUpdateAtSuperClass{
     @JoinColumn(name = "tariff_id")
     private Tariff tariff;
 
+    @JsonManagedReference
     @ManyToOne
     @JoinColumn(name = "service_package_id")
     private ServicePackage servicePackage;

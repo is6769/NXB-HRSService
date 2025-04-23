@@ -23,7 +23,7 @@ values (1,
         'RATE',
         1.5,
         'у.е.',
-        '{"condition_type": "complex", "logic": "AND", "conditions": [
+        '{"type": "and", "conditions": [
             {"field": "call_type", "operator": "equals", "value": "01"},
             {"field": "other_operator", "operator": "equals", "value": "Ромашка"}
           ]
@@ -35,9 +35,9 @@ values (1,
         'RATE',
         2.5,
         'у.е.',
-        '{"condition_type": "complex", "logic": "AND", "conditions": [
-          {"field": "call_type", "operator": "equals", "value": "01"},
-          {"field": "other_operator", "operator": "not_equals", "value": "Ромашка"}
+        '{"type": "and", "conditions": [
+          {"type": "field", "field": "call_type", "operator": "equals", "value": "01"},
+          {"type": "field", "field": "other_operator", "operator": "not_equals", "value": "Ромашка"}
         ]
         }'
        );
@@ -48,7 +48,7 @@ values (
         'RATE',
         0,
         'у.е.',
-        '{"condition_type": "simple", "field": "call_type", "operator": "equals", "value": "02"}'
+        '{"type": "field", "field": "call_type", "operator": "equals", "value": "02"}'
        );
 
 
@@ -89,8 +89,17 @@ values (2,
         'LIMIT',
         50,
         'minutes',
-        '{"condition_type": "always_true"}'
+        '{"type": "always_true"}'
        );
+
+insert into package_rules(service_package_id,rule_type,value,unit,condition)
+values (2,
+        'RATE',
+        0,
+        'y.e.',
+        '{"type": "always_true"}'
+       );
+
 
 insert into package_rules(service_package_id,rule_type,value,unit,condition)
 values (
@@ -98,7 +107,7 @@ values (
            'COST',
            100,
            'у.е.',
-           '{"condition_type": "always_true"}'
+           '{"type": "always_true"}'
        );
 
 

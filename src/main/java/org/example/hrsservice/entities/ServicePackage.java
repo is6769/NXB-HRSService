@@ -1,6 +1,7 @@
 package org.example.hrsservice.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"packageRules","subscriberPackageUsages", "tariffPackages"})
 public class ServicePackage extends CreatedUpdateAtSuperClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,11 +32,14 @@ public class ServicePackage extends CreatedUpdateAtSuperClass {
 
 
     @OneToMany(mappedBy = "servicePackage", fetch = FetchType.LAZY)
+    @JsonBackReference
     private List<PackageRule> packageRules;
 
     @OneToMany(mappedBy = "servicePackage", fetch = FetchType.LAZY)
+    @JsonBackReference
     private List<SubscriberPackageUsage> subscriberPackageUsages;
 
     @OneToMany(mappedBy = "servicePackage", fetch = FetchType.LAZY)
+    @JsonBackReference
     private List<TariffPackage> tariffPackages;
 }

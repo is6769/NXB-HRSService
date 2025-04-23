@@ -1,5 +1,6 @@
 package org.example.hrsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,6 +22,7 @@ public class SubscriberPackageUsage extends CreatedUpdateAtSuperClass{
     @Column(name = "subscriber_id", nullable = false)
     private Long subscriberId;
 
+    @JsonManagedReference
     @ManyToOne
     @JoinColumn(name = "service_package_id")
     private ServicePackage servicePackage;

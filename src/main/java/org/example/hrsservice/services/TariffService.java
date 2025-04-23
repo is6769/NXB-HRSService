@@ -56,7 +56,7 @@ public class TariffService {
                 PackageRule rateRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO, RuleType.RATE);
                 BigDecimal price=calculatePriceAccordingToRule(rateRule,cdrWithMetadataDTO.cdrMetadata().getDurationInMinutes());// this the result return it
             }else {
-                //here we should whether it can be putted in one limit
+                //here we should check whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
 
                 PackageRule rateRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);

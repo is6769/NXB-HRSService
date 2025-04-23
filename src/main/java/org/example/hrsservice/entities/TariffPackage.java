@@ -1,5 +1,6 @@
 package org.example.hrsservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +17,7 @@ public class TariffPackage extends CreatedUpdateAtSuperClass{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonManagedReference
     @ManyToOne
     @JoinColumn(name = "tariff_id")
     private Tariff tariff;

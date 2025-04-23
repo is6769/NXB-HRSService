@@ -15,7 +15,7 @@ public class TariffController {
     }
 
     @PostMapping("tariff")
-    public String chargeCdr(CdrWithMetadataDTO cdrWithMetadataDTO){
+    public String chargeCdr(@RequestBody CdrWithMetadataDTO cdrWithMetadataDTO){
         tariffService.chargeCdr(cdrWithMetadataDTO);
         return "Hello, World";
     }

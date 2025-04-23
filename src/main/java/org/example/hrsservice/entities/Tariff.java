@@ -1,11 +1,9 @@
 package org.example.hrsservice.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -18,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"subscriberTariffs","tariffPackages"})
 public class Tariff extends CreatedUpdateAtSuperClass{
 
     @Id
@@ -38,8 +37,10 @@ public class Tariff extends CreatedUpdateAtSuperClass{
     private Boolean is_active;
 
     @OneToMany(mappedBy = "tariff")
+    @JsonBackReference
     private List<SubscriberTariff> subscriberTariffs;
 
     @OneToMany(mappedBy = "tariff")
+    @JsonBackReference
     private List<TariffPackage> tariffPackages;
 }

@@ -1,6 +1,7 @@
 package org.example.hrsservice.services;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.example.hrsservice.dtos.CdrWithMetadataDTO;
 import org.example.hrsservice.dtos.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
@@ -9,12 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
+@Slf4j
 public class TariffService {
 
     private final TariffRepository tariffRepository;
@@ -39,6 +38,9 @@ public class TariffService {
         systemDatetimeService.setSystemDatetime(cdrWithMetadataDTO.finishDateTime());
         //TODO queues for finished tarification periods bills
         SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(cdrWithMetadataDTO.cdrMetadata().getSubscriberId()).orElseThrow(RuntimeException::new);
+
+        log.info(subscriberTariff.toString());
+
         Tariff tariff = subscriberTariff.getTariff();
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
         tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
@@ -49,18 +51,35 @@ public class TariffService {
             //check if we have limit, satisfying conditions
             //if we have so we should find 1 rate satisfying conditions
             //we always have 1 rate and at more 1 limit(if no limit found this is pominutnii)(for free calls in package we use rate with value:0)
-            PackageRule limitRule = findLimitRuleThatSatisfiesCondition(cdrWithMetadataDTO);
+            PackageRule limitRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO, RuleType.LIMIT);
             if (limitRule==null){//that is pominutnii
-                PackageRule rateRule = findRateRuleThatSatisfiesCondition(cdrWithMetadataDTO);
+                PackageRule rateRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO, RuleType.RATE);
                 BigDecimal price=calculatePriceAccordingToRule(rateRule,cdrWithMetadataDTO.cdrMetadata().getDurationInMinutes());// this the result return it
             }else {
                 //here we should whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
 
-                PackageRule rateRule = findRateRuleThatSatisfiesCondition(cdrWithMetadataDTO);
+                PackageRule rateRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);
                 //
             }
         }
+    }
+
+    private PackageRule findRuleThatSatisfiesConditionAndType(List<PackageRule> rules, CdrWithMetadataDTO cdrWithMetadataDTO, RuleType ruleType) {
+        for (PackageRule rule: rules){
+            if (rule.getRuleType().equals(ruleType)){
+                if (ruleIsSatisfyingCondition(cdrWithMetadataDTO,rule.getCondition())){
+                    return rule;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean ruleIsSatisfyingCondition(CdrWithMetadataDTO cdrWithMetadataDTO, Map<String, Object> condition) {
+        String conditionType = condition.get("type").toString();
+        if (conditionType.equals("always_true")) return true;
+        return false;
     }
 
     private BigDecimal calculatePriceAccordingToRule(PackageRule rateRule, Integer durationInMinutes) {

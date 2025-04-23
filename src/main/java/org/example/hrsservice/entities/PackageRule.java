@@ -39,5 +39,5 @@ public class PackageRule extends CreatedUpdateAtSuperClass {
 
     @Column(name = "condition", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
-    private String condition;
+    private Map<String,Object> condition;
 }

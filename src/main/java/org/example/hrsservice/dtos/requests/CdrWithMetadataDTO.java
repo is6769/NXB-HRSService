@@ -17,5 +17,16 @@ public record CdrWithMetadataDTO(
         Long subscriberId,
         JsonNode metadata
 ) {
-
+    public CdrWithMetadataDTO deepClone() {
+        return new CdrWithMetadataDTO(
+                this.id,
+                this.callType,
+                this.servicedMsisdn,
+                this.otherMsisdn,
+                this.startDateTime,
+                this.finishDateTime,
+                this.subscriberId,
+                this.metadata.deepCopy()
+        );
+    }
 }

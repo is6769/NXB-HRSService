@@ -9,4 +9,6 @@ public interface SubscriberPackageUsageRepository extends JpaRepository<Subscrib
     List<SubscriberPackageUsage> findAllBySubscriberId(Long subscriberId);
 
     List<SubscriberPackageUsage> findAllBySubscriberIdAndIsDeletedFalse(Long subscriberId);
+
+    SubscriberPackageUsage findAllByServicePackageIdAndIsDeletedFalse(Long servicePackageId);
 }

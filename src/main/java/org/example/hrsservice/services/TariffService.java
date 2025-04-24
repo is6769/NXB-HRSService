@@ -61,11 +61,27 @@ public class TariffService {
             }else {
                 //here we should check whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
+                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findAllByServicePackageIdAndIsDeletedFalse(limitRule.getId());
+                BigDecimal usedAmount = subscriberPackageUsage.getUsedAmount();
+                if (usedAmount.compareTo(limitRule.getValue()) < 0){
+                    var presentAmount = limitRule.getValue().subtract(usedAmount);
+                    var neededAmount = new BigDecimal(cdrWithMetadataDTO.metadata().get("durationInMinutes").asInt());
+                    if (presentAmount.compareTo(neededAmount) <0 ){
+                        List<TarifficationBillDTO> tarifficationBills = new ArrayList<>();
+                        var partThatLiesInThisPackage = cdrWithMetadataDTO.deepClone();
+                        var amountThatGoesOutOfLimit = neededAmount.subtract(presentAmount);
+                        var partThatLiesOutThisPackage = cdrWithMetadataDTO.deepClone();
 
-                PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);
-                BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
-                return new TarifficationBillDTO(price,"y.e.", cdrWithMetadataDTO.subscriberId());
-                //
+
+                    }else {
+                        PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);
+                        BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
+                        subscriberPackageUsage.setUsedAmount(presentAmount.add(neededAmount));
+                        subscriberPackageUsageRepository.save(subscriberPackageUsage);
+                        return new TarifficationBillDTO(price,"y.e.", cdrWithMetadataDTO.subscriberId());
+                    }
+                }
+
             }
         }
         return null;

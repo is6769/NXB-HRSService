@@ -1,9 +1,10 @@
 package org.example.hrsservice.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.example.hrsservice.dtos.CdrWithMetadataDTO;
-import org.example.hrsservice.dtos.TarifficationBillDTO;
+import org.example.hrsservice.dtos.requests.CdrWithMetadataDTO;
+import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
 import org.example.hrsservice.repositories.*;
 import org.springframework.stereotype.Service;
@@ -34,41 +35,46 @@ public class TariffService {
         this.systemDatetimeService = systemDatetimeService;
     }
 
-    public void chargeCdr(CdrWithMetadataDTO cdrWithMetadataDTO) {
+    public TarifficationBillDTO chargeCdr(CdrWithMetadataDTO cdrWithMetadataDTO) {
+        JsonNode metadata = cdrWithMetadataDTO.metadata();
         systemDatetimeService.setSystemDatetime(cdrWithMetadataDTO.finishDateTime());
         //TODO queues for finished tarification periods bills
-        SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(cdrWithMetadataDTO.cdrMetadata().getSubscriberId()).orElseThrow(RuntimeException::new);
+        SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(cdrWithMetadataDTO.subscriberId()).orElseThrow(RuntimeException::new);
 
         log.info(subscriberTariff.toString());
 
         Tariff tariff = subscriberTariff.getTariff();
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
         tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
-        List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(cdrWithMetadataDTO.cdrMetadata().getSubscriberId());
+        List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(cdrWithMetadataDTO.subscriberId());
 
         for (TariffPackage tariffPackage: tariffPackages){
             List<PackageRule> rules = packageRuleRepository.findAllByServicePackage_Id(tariffPackage.getServicePackage().getId());
             //check if we have limit, satisfying conditions
             //if we have so we should find 1 rate satisfying conditions
             //we always have 1 rate and at more 1 limit(if no limit found this is pominutnii)(for free calls in package we use rate with value:0)
-            PackageRule limitRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO, RuleType.LIMIT);
+            PackageRule limitRule = findRuleThatMatchesConditionAndType(rules, cdrWithMetadataDTO, RuleType.LIMIT);
             if (limitRule==null){//that is pominutnii
-                PackageRule rateRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO, RuleType.RATE);
-                BigDecimal price=calculatePriceAccordingToRule(rateRule,cdrWithMetadataDTO.cdrMetadata().getDurationInMinutes());// this the result return it
+                PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, cdrWithMetadataDTO, RuleType.RATE);
+                BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
+                return new TarifficationBillDTO(price,"y.e.", cdrWithMetadataDTO.subscriberId());// this the result return it
             }else {
                 //here we should check whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
 
-                PackageRule rateRule = findRuleThatSatisfiesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);
+                PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);
+                BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
+                return new TarifficationBillDTO(price,"y.e.", cdrWithMetadataDTO.subscriberId());
                 //
             }
         }
+        return null;
     }
 
-    private PackageRule findRuleThatSatisfiesConditionAndType(List<PackageRule> rules, CdrWithMetadataDTO cdrWithMetadataDTO, RuleType ruleType) {
+    private PackageRule findRuleThatMatchesConditionAndType(List<PackageRule> rules, CdrWithMetadataDTO cdrWithMetadataDTO, RuleType ruleType) {
         for (PackageRule rule: rules){
             if (rule.getRuleType().equals(ruleType)){
-                if (ruleIsSatisfyingCondition(cdrWithMetadataDTO,rule.getCondition())){
+                if (cdrMatchesCondition(cdrWithMetadataDTO,rule.getCondition())){
                     return rule;
                 }
             }
@@ -76,13 +82,40 @@ public class TariffService {
         return null;
     }
 
-    private boolean ruleIsSatisfyingCondition(CdrWithMetadataDTO cdrWithMetadataDTO, Map<String, Object> condition) {
-        String conditionType = condition.get("type").toString();
-        if (conditionType.equals("always_true")) return true;
+    private boolean cdrMatchesCondition(CdrWithMetadataDTO cdrWithMetadataDTO, ConditionNode condition) {
+        String conditionType = condition.getType();
+        if ("always_true".equals(conditionType)) return true;
+        else if ("field".equals(conditionType)) return ifCdrMatchesFieldCondition(cdrWithMetadataDTO,condition);
+        else if ("and".equals(conditionType)) {
+            List<Boolean> results = new ArrayList<>();
+            condition.getConditions().forEach(subCondition -> results.add(cdrMatchesCondition(cdrWithMetadataDTO,subCondition)));
+            return !results.contains(false);
+        } else if ("or".equals(conditionType)) {
+            List<Boolean> results = new ArrayList<>();
+            condition.getConditions().forEach(subCondition -> results.add(cdrMatchesCondition(cdrWithMetadataDTO,subCondition)));
+            return results.contains(true);
+        }
+
         return false;
     }
 
-    private BigDecimal calculatePriceAccordingToRule(PackageRule rateRule, Integer durationInMinutes) {
+    private boolean ifCdrMatchesFieldCondition(CdrWithMetadataDTO cdrWithMetadataDTO, ConditionNode condition) {
+        String fieldName = condition.getField();
+        String operator = condition.getOperator();
+        String conditionValue = condition.getValue();
+        if (cdrWithMetadataDTO.metadata().has(fieldName)){
+            return compareMetadataValueWithConditionValueViaOperator(cdrWithMetadataDTO.metadata().get(fieldName).asText(), operator, conditionValue);
+        } //TODO Reflection or JSONNODE
+        return false;
+    }
+
+    private boolean compareMetadataValueWithConditionValueViaOperator(String metadataValue, String operator, String conditionValue) {
+        if ("equals".equals(operator)) return metadataValue.equals(conditionValue);
+        if ("not_equals".equals(operator)) return !metadataValue.equals(conditionValue);
+        return true;
+    }
+
+    private BigDecimal calculateCallPriceAccordingToRule(PackageRule rateRule, Integer durationInMinutes) {
         return rateRule.getValue().multiply(new BigDecimal(durationInMinutes));
     }
 
@@ -123,7 +156,7 @@ public class TariffService {
                 }
             }
         });
-        return new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.");
+        return new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId);
     }
 
     public void cleanAllSubscriberInfo(Long subscriberId){

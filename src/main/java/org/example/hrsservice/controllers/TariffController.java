@@ -1,7 +1,7 @@
 package org.example.hrsservice.controllers;
 
-import org.example.hrsservice.dtos.CdrWithMetadataDTO;
-import org.example.hrsservice.dtos.TarifficationBillDTO;
+import org.example.hrsservice.dtos.requests.CdrWithMetadataDTO;
+import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.services.TariffService;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +15,8 @@ public class TariffController {
     }
 
     @PostMapping("tariff")
-    public String chargeCdr(@RequestBody CdrWithMetadataDTO cdrWithMetadataDTO){
-        tariffService.chargeCdr(cdrWithMetadataDTO);
-        return "Hello, World";
+    public TarifficationBillDTO chargeCdr(@RequestBody CdrWithMetadataDTO cdrWithMetadataDTO){
+        return tariffService.chargeCdr(cdrWithMetadataDTO);
     }
 
     @PutMapping("subscribers/{subscriberId}/tariff/{tariffId}")

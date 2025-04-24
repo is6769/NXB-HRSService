@@ -1,7 +1,7 @@
-package org.example.hrsservice.dtos;
+package org.example.hrsservice.dtos.requests;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
-import org.example.hrsservice.embedded.DefaultCdrMetadata;
 
 
 import java.time.LocalDateTime;
@@ -14,7 +14,8 @@ public record CdrWithMetadataDTO(
         String otherMsisdn,
         LocalDateTime startDateTime,
         LocalDateTime finishDateTime,
-        DefaultCdrMetadata cdrMetadata
+        Long subscriberId,
+        JsonNode metadata
 ) {
 
 }

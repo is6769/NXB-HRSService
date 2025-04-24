@@ -24,8 +24,8 @@ values (1,
         1.5,
         'у.е.',
         '{"type": "and", "conditions": [
-            {"field": "call_type", "operator": "equals", "value": "01"},
-            {"field": "other_operator", "operator": "equals", "value": "Ромашка"}
+            {"type": "field", "field": "callType", "operator": "equals", "value": "01"},
+            {"type": "field", "field": "otherOperator", "operator": "equals", "value": "Ромашка"}
           ]
         }'
         );
@@ -36,8 +36,8 @@ values (1,
         2.5,
         'у.е.',
         '{"type": "and", "conditions": [
-          {"type": "field", "field": "call_type", "operator": "equals", "value": "01"},
-          {"type": "field", "field": "other_operator", "operator": "not_equals", "value": "Ромашка"}
+          {"type": "field", "field": "callType", "operator": "equals", "value": "01"},
+          {"type": "field", "field": "otherOperator", "operator": "not_equals", "value": "Ромашка"}
         ]
         }'
        );
@@ -48,7 +48,7 @@ values (
         'RATE',
         0,
         'у.е.',
-        '{"type": "field", "field": "call_type", "operator": "equals", "value": "02"}'
+        '{"type": "field", "field": "callType", "operator": "equals", "value": "02"}'
        );
 
 

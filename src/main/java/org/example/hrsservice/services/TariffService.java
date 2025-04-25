@@ -1,6 +1,7 @@
 package org.example.hrsservice.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.hrsservice.dtos.requests.CdrWithMetadataDTO;
@@ -37,7 +38,7 @@ public class TariffService {
 
     public TarifficationBillDTO chargeCdr(CdrWithMetadataDTO cdrWithMetadataDTO) {
         JsonNode metadata = cdrWithMetadataDTO.metadata();
-        systemDatetimeService.setSystemDatetime(cdrWithMetadataDTO.finishDateTime());
+        systemDatetimeService.setSystemDatetime(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
         //TODO queues for finished tarification periods bills
         SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(cdrWithMetadataDTO.subscriberId()).orElseThrow(RuntimeException::new);
 
@@ -46,7 +47,7 @@ public class TariffService {
         Tariff tariff = subscriberTariff.getTariff();
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
         tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
-        List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(cdrWithMetadataDTO.subscriberId());
+        //List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(cdrWithMetadataDTO.subscriberId());
 
         for (TariffPackage tariffPackage: tariffPackages){
             List<PackageRule> rules = packageRuleRepository.findAllByServicePackage_Id(tariffPackage.getServicePackage().getId());
@@ -61,22 +62,29 @@ public class TariffService {
             }else {
                 //here we should check whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
-                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findAllByServicePackageIdAndIsDeletedFalse(limitRule.getId());
+                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findAllByServicePackageIdAndIsDeletedFalse(limitRule.getServicePackage().getId());
                 BigDecimal usedAmount = subscriberPackageUsage.getUsedAmount();
                 if (usedAmount.compareTo(limitRule.getValue()) < 0){
-                    var presentAmount = limitRule.getValue().subtract(usedAmount);
+                    var availableAmount = limitRule.getValue().subtract(usedAmount);
                     var neededAmount = new BigDecimal(cdrWithMetadataDTO.metadata().get("durationInMinutes").asInt());
-                    if (presentAmount.compareTo(neededAmount) <0 ){
+                    if (availableAmount.compareTo(neededAmount) <0 ){
                         List<TarifficationBillDTO> tarifficationBills = new ArrayList<>();
-                        var partThatLiesInThisPackage = cdrWithMetadataDTO.deepClone();
-                        var amountThatGoesOutOfLimit = neededAmount.subtract(presentAmount);
-                        var partThatLiesOutThisPackage = cdrWithMetadataDTO.deepClone();
 
+                        var partThatLiesInThisPackage = cdrWithMetadataDTO.deepClone();
+                        ((ObjectNode)partThatLiesInThisPackage.metadata()).put("durationInMinutes",availableAmount);
+                        tarifficationBills.add(chargeCdr(partThatLiesInThisPackage));
+
+
+                        var amountThatGoesOutOfLimit = neededAmount.subtract(availableAmount);
+                        var partThatLiesOutOfThisPackage = cdrWithMetadataDTO.deepClone();
+                        ((ObjectNode)partThatLiesOutOfThisPackage.metadata()).put("durationInMinutes",amountThatGoesOutOfLimit);
+                        tarifficationBills.add(chargeCdr(partThatLiesOutOfThisPackage));
+                        //return calculateTotalBill(tarifficationBills);
 
                     }else {
                         PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, cdrWithMetadataDTO,RuleType.RATE);
                         BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
-                        subscriberPackageUsage.setUsedAmount(presentAmount.add(neededAmount));
+                        subscriberPackageUsage.setUsedAmount(availableAmount.add(neededAmount));
                         subscriberPackageUsageRepository.save(subscriberPackageUsage);
                         return new TarifficationBillDTO(price,"y.e.", cdrWithMetadataDTO.subscriberId());
                     }

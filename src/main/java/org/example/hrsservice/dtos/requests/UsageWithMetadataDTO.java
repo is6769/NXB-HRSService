@@ -3,16 +3,13 @@ package org.example.hrsservice.dtos.requests;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 
-
-import java.time.LocalDateTime;
-
 @Builder
-public record CdrWithMetadataDTO(
+public record UsageWithMetadataDTO(
         Long subscriberId,
         JsonNode metadata
 ) {
-    public CdrWithMetadataDTO deepClone() {
-        return new CdrWithMetadataDTO(
+    public UsageWithMetadataDTO deepClone() {
+        return new UsageWithMetadataDTO(
                 this.subscriberId,
                 this.metadata.deepCopy()
         );

@@ -158,6 +158,12 @@ public class TariffService {
     @Transactional
     public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId){
         LocalDateTime systemDatetime = systemDatetimeService.getSystemDatetime();
+        return setTariffForSubscriber(subscriberId,tariffId, systemDatetime);
+    }
+
+    @Transactional
+    public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId,LocalDateTime systemDatetime){
+
         Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(RuntimeException::new);
         Optional<SubscriberTariff> currentSubscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId);
         if (currentSubscriberTariff.isPresent()){

@@ -36,7 +36,7 @@ public class TariffService {
         this.systemDatetimeService = systemDatetimeService;
     }
 
-    public TarifficationBillDTO chargeCdr(UsageWithMetadataDTO usageWithMetadataDTO) {
+    public TarifficationBillDTO chargeCall(UsageWithMetadataDTO usageWithMetadataDTO) {
         JsonNode metadata = usageWithMetadataDTO.metadata();
         systemDatetimeService.setSystemDatetime(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
         //TODO queues for finished tarification periods bills
@@ -71,13 +71,13 @@ public class TariffService {
 
                         var partThatLiesInThisPackage = usageWithMetadataDTO.deepClone();
                         ((ObjectNode)partThatLiesInThisPackage.metadata()).put("durationInMinutes",availableAmount);
-                        tarifficationBills.add(chargeCdr(partThatLiesInThisPackage));
+                        tarifficationBills.add(chargeCall(partThatLiesInThisPackage));
 
 
                         var amountThatGoesOutOfLimit = neededAmount.subtract(availableAmount);
                         var partThatLiesOutOfThisPackage = usageWithMetadataDTO.deepClone();
                         ((ObjectNode)partThatLiesOutOfThisPackage.metadata()).put("durationInMinutes",amountThatGoesOutOfLimit);
-                        tarifficationBills.add(chargeCdr(partThatLiesOutOfThisPackage));
+                        tarifficationBills.add(chargeCall(partThatLiesOutOfThisPackage));
 
                         return calculateTotalBill(tarifficationBills);
                     }else {//if we have enough minutes to put in package

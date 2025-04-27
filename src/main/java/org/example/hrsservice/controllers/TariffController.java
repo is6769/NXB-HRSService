@@ -20,7 +20,7 @@ public class TariffController {
 
     @PostMapping("tariff")
     public TarifficationBillDTO chargeCdr(@RequestBody UsageWithMetadataDTO usageWithMetadataDTO){
-        return tariffService.chargeCdr(usageWithMetadataDTO);
+        return tariffService.chargeCall(usageWithMetadataDTO);
     }
 
     @PutMapping("subscribers/{subscriberId}/tariff/{tariffId}")

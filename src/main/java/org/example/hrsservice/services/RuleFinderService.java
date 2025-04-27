@@ -20,7 +20,7 @@ public class RuleFinderService {
                 }
             }
         }
-        //TODO throw error
+        //TODO throw exception
         return null;
     }
 
@@ -54,6 +54,7 @@ public class RuleFinderService {
     private boolean compareMetadataValueWithConditionValueViaOperator(String metadataValue, String operator, String conditionValue) {
         if ("equals".equals(operator)) return metadataValue.equals(conditionValue);
         if ("not_equals".equals(operator)) return !metadataValue.equals(conditionValue);
+        //TODO throw exception
         return true;
     }
 }

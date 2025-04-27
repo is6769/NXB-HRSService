@@ -49,6 +49,7 @@ public class TariffService {
 
         JsonNode metadata = usageWithMetadataDTO.metadata();
         systemDatetimeService.setSystemDatetime(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
+        chargeExpiredSubscribersTariffs(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
         SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(usageWithMetadataDTO.subscriberId()).orElseThrow(RuntimeException::new);
         Tariff tariff = subscriberTariff.getTariff();
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
@@ -116,6 +117,15 @@ public class TariffService {
         return rateRule.getValue().multiply(new BigDecimal(durationInMinutes));
     }
 
+    //@Transactional
+    public void chargeExpiredSubscribersTariffs(LocalDateTime systemDatetime){
+        List<SubscriberTariff> expiredList = subscriberTariffRepository.findAllByCycleEndBeforeAndTariff_CycleSizeNot(systemDatetime,"0 days");
+        expiredList.forEach(expired -> {
+            log.info("MONTHLY BILLING: {}     systemdatetime: {}", expired, systemDatetime);
+            setTariffForSubscriber(expired.getSubscriberId(),expired.getTariff().getId(),systemDatetime);
+        });
+    }
+
 
     @Transactional
     public void setTariffForSubscriber(Long subscriberId, Long tariffId){
@@ -160,7 +170,6 @@ public class TariffService {
             }
         });
         produceBill(new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId));
-        //return new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId);
     }
 
     public void produceBill(TarifficationBillDTO bill){

@@ -20,16 +20,14 @@ public class TariffService {
 
     private final TariffRepository tariffRepository;
     private final SubscriberTariffRepository subscriberTariffRepository;
-    private final ServicePackageRepository servicePackageRepository;
     private final TariffPackageRepository tariffPackageRepository;
     private final PackageRuleRepository packageRuleRepository;
     private final SubscriberPackageUsageRepository subscriberPackageUsageRepository;
     private final SystemDatetimeService systemDatetimeService;
 
-    public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, ServicePackageRepository servicePackageRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository, SystemDatetimeService systemDatetimeService) {
+    public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository, SystemDatetimeService systemDatetimeService) {
         this.tariffRepository = tariffRepository;
         this.subscriberTariffRepository = subscriberTariffRepository;
-        this.servicePackageRepository = servicePackageRepository;
         this.tariffPackageRepository = tariffPackageRepository;
         this.packageRuleRepository = packageRuleRepository;
         this.subscriberPackageUsageRepository = subscriberPackageUsageRepository;
@@ -37,13 +35,11 @@ public class TariffService {
     }
 
     public TarifficationBillDTO chargeCall(UsageWithMetadataDTO usageWithMetadataDTO) {
+        RuleFinderService ruleFinderService = new RuleFinderService();
+
         JsonNode metadata = usageWithMetadataDTO.metadata();
         systemDatetimeService.setSystemDatetime(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
-        //TODO queues for finished tarification periods bills
         SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(usageWithMetadataDTO.subscriberId()).orElseThrow(RuntimeException::new);
-
-        log.info(subscriberTariff.toString());
-
         Tariff tariff = subscriberTariff.getTariff();
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
         tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
@@ -53,9 +49,9 @@ public class TariffService {
             //check if we have limit, satisfying conditions
             //if we have so we should find 1 rate satisfying conditions
             //we always have 1 active rate and from 0 to 1 active limit(if no limit found this is pominutnii)(for free calls in package we use rate with value:0)
-            PackageRule limitRule = findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO, RuleType.LIMIT);
+            PackageRule limitRule = ruleFinderService.findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO, RuleType.LIMIT);
             if (limitRule==null){//that is pominutnii
-                PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO, RuleType.RATE);
+                PackageRule rateRule = ruleFinderService.findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO, RuleType.RATE);
                 BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
                 return new TarifficationBillDTO(price,"y.e.", usageWithMetadataDTO.subscriberId());// this the result return it
             }else {//that is with limit
@@ -81,7 +77,7 @@ public class TariffService {
 
                         return calculateTotalBill(tarifficationBills);
                     }else {//if we have enough minutes to put in package
-                        PackageRule rateRule = findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO,RuleType.RATE);
+                        PackageRule rateRule = ruleFinderService.findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO,RuleType.RATE);
                         BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
                         subscriberPackageUsage.setUsedAmount(usedAmount.add(neededAmount));
                         subscriberPackageUsageRepository.save(subscriberPackageUsage);
@@ -104,50 +100,6 @@ public class TariffService {
         }
 
         return new TarifficationBillDTO(totalPrice,"y.e.",subscriberId);
-    }
-
-    private PackageRule findRuleThatMatchesConditionAndType(List<PackageRule> rules, UsageWithMetadataDTO usageWithMetadataDTO, RuleType ruleType) {
-        for (PackageRule rule: rules){
-            if (rule.getRuleType().equals(ruleType)){
-                if (cdrMatchesCondition(usageWithMetadataDTO,rule.getCondition())){
-                    return rule;
-                }
-            }
-        }
-        return null;
-    }
-
-    private boolean cdrMatchesCondition(UsageWithMetadataDTO usageWithMetadataDTO, ConditionNode condition) {
-        String conditionType = condition.getType();
-        if ("always_true".equals(conditionType)) return true;
-        else if ("field".equals(conditionType)) return ifCdrMatchesFieldCondition(usageWithMetadataDTO,condition);
-        else if ("and".equals(conditionType)) {
-            List<Boolean> results = new ArrayList<>();
-            condition.getConditions().forEach(subCondition -> results.add(cdrMatchesCondition(usageWithMetadataDTO,subCondition)));
-            return !results.contains(false);
-        } else if ("or".equals(conditionType)) {
-            List<Boolean> results = new ArrayList<>();
-            condition.getConditions().forEach(subCondition -> results.add(cdrMatchesCondition(usageWithMetadataDTO,subCondition)));
-            return results.contains(true);
-        }
-
-        return false;
-    }
-
-    private boolean ifCdrMatchesFieldCondition(UsageWithMetadataDTO usageWithMetadataDTO, ConditionNode condition) {
-        String fieldName = condition.getField();
-        String operator = condition.getOperator();
-        String conditionValue = condition.getValue();
-        if (usageWithMetadataDTO.metadata().has(fieldName)){
-            return compareMetadataValueWithConditionValueViaOperator(usageWithMetadataDTO.metadata().get(fieldName).asText(), operator, conditionValue);
-        }
-        return false;
-    }
-
-    private boolean compareMetadataValueWithConditionValueViaOperator(String metadataValue, String operator, String conditionValue) {
-        if ("equals".equals(operator)) return metadataValue.equals(conditionValue);
-        if ("not_equals".equals(operator)) return !metadataValue.equals(conditionValue);
-        return true;
     }
 
     private BigDecimal calculateCallPriceAccordingToRule(PackageRule rateRule, Integer durationInMinutes) {

@@ -2,13 +2,15 @@ package org.example.hrsservice.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
 import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
 import org.example.hrsservice.repositories.*;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,20 +20,28 @@ import java.util.*;
 @Slf4j
 public class TariffService {
 
+    @Value("${const.rabbitmq.bills.BILLS_ROUTING_KEY}")
+    private String BILLS_ROUTING_KEY;
+
+    @Value("${const.rabbitmq.bills.BILLS_EXCHANGE_NAME}")
+    private String BILLS_EXCHANGE_NAME;
+
     private final TariffRepository tariffRepository;
     private final SubscriberTariffRepository subscriberTariffRepository;
     private final TariffPackageRepository tariffPackageRepository;
     private final PackageRuleRepository packageRuleRepository;
     private final SubscriberPackageUsageRepository subscriberPackageUsageRepository;
     private final SystemDatetimeService systemDatetimeService;
+    private final RabbitTemplate rabbitTemplate;
 
-    public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository, SystemDatetimeService systemDatetimeService) {
+    public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository, SystemDatetimeService systemDatetimeService, RabbitTemplate rabbitTemplate) {
         this.tariffRepository = tariffRepository;
         this.subscriberTariffRepository = subscriberTariffRepository;
         this.tariffPackageRepository = tariffPackageRepository;
         this.packageRuleRepository = packageRuleRepository;
         this.subscriberPackageUsageRepository = subscriberPackageUsageRepository;
         this.systemDatetimeService = systemDatetimeService;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     public TarifficationBillDTO chargeCall(UsageWithMetadataDTO usageWithMetadataDTO) {
@@ -108,13 +118,13 @@ public class TariffService {
 
 
     @Transactional
-    public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId){
+    public void setTariffForSubscriber(Long subscriberId, Long tariffId){
         LocalDateTime systemDatetime = systemDatetimeService.getSystemDatetime();
-        return setTariffForSubscriber(subscriberId,tariffId, systemDatetime);
+        setTariffForSubscriber(subscriberId,tariffId, systemDatetime);
     }
 
     @Transactional
-    public TarifficationBillDTO setTariffForSubscriber(Long subscriberId, Long tariffId,LocalDateTime systemDatetime){
+    public void setTariffForSubscriber(Long subscriberId, Long tariffId,LocalDateTime systemDatetime){
 
         Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(RuntimeException::new);
         Optional<SubscriberTariff> currentSubscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId);
@@ -149,7 +159,12 @@ public class TariffService {
                 }
             }
         });
-        return new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId);
+        produceBill(new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId));
+        //return new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId);
+    }
+
+    public void produceBill(TarifficationBillDTO bill){
+        rabbitTemplate.convertAndSend(BILLS_EXCHANGE_NAME,BILLS_ROUTING_KEY,bill);
     }
 
     public void cleanAllSubscriberInfo(Long subscriberId){

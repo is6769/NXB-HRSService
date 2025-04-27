@@ -24,15 +24,16 @@ public class TariffController {
     }
 
     @PutMapping("subscribers/{subscriberId}/tariff/{tariffId}")
-    public TarifficationBillDTO setTariffForSubscriber(
+    public String setTariffForSubscriber(
             @PathVariable Long subscriberId,
             @PathVariable Long tariffId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime systemDateTime
     )
     {
         if (Objects.nonNull(systemDateTime)){
-            return tariffService.setTariffForSubscriber(subscriberId,tariffId,systemDateTime);
+            tariffService.setTariffForSubscriber(subscriberId,tariffId,systemDateTime);
         }
-        return tariffService.setTariffForSubscriber(subscriberId,tariffId);
+        tariffService.setTariffForSubscriber(subscriberId,tariffId);
+        return "Successfully set tariff.";
     }
 }

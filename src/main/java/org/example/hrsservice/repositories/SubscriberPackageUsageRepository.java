@@ -1,6 +1,8 @@
 package org.example.hrsservice.repositories;
 
 import org.example.hrsservice.entities.SubscriberPackageUsage;
+import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -10,5 +12,5 @@ public interface SubscriberPackageUsageRepository extends JpaRepository<Subscrib
 
     List<SubscriberPackageUsage> findAllBySubscriberIdAndIsDeletedFalse(Long subscriberId);
 
-    SubscriberPackageUsage findAllByServicePackageIdAndIsDeletedFalse(Long servicePackageId);
+    SubscriberPackageUsage findByServicePackageIdAndIsDeletedFalseAndSubscriberId(Long servicePackageId, Long subscriberId);
 }

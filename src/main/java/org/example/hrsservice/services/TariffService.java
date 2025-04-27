@@ -61,7 +61,7 @@ public class TariffService {
             }else {//that is with limit
                 //here we should check whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
-                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findAllByServicePackageIdAndIsDeletedFalse(limitRule.getServicePackage().getId());
+                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findByServicePackageIdAndIsDeletedFalseAndSubscriberId(limitRule.getServicePackage().getId(),usageWithMetadataDTO.subscriberId());
                 BigDecimal usedAmount = subscriberPackageUsage.getUsedAmount();
                 if (usedAmount.compareTo(limitRule.getValue()) < 0){
                     var availableAmount = limitRule.getValue().subtract(usedAmount);

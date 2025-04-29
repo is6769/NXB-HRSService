@@ -23,6 +23,33 @@ public class BillsRabbitMQConfig {
     @Value("${const.rabbitmq.bills.BILLS_ROUTING_KEY}")
     private String BILLS_ROUTING_KEY;
 
+    @Value("${const.rabbitmq.dead-letter.DEAD_LETTER_EXCHANGE_POSTFIX}")
+    private String DEAD_LETTER_EXCHANGE_POSTFIX;
+
+    @Value("${const.rabbitmq.dead-letter.DEAD_LETTER_ROUTING_KEY_POSTFIX}")
+    private String DEAD_LETTER_ROUTING_KEY_POSTFIX;
+
+    @Value("${const.rabbitmq.dead-letter.DEAD_LETTER_QUEUE_POSTFIX}")
+    private String DEAD_LETTER_QUEUE_POSTFIX;
+
+    @Bean
+    public Queue deadLetterBillsQueue(){
+        return new Queue(BILLS_QUEUE_NAME+DEAD_LETTER_QUEUE_POSTFIX);
+    }
+
+    @Bean
+    public DirectExchange deadLetterBillsExchange(){
+        return new DirectExchange(BILLS_EXCHANGE_NAME+DEAD_LETTER_EXCHANGE_POSTFIX,false,false);
+    }
+
+    @Bean
+    public Binding deadLetterBillsBinding(){
+        return BindingBuilder
+                .bind(deadLetterBillsQueue())
+                .to(deadLetterBillsExchange())
+                .with(BILLS_ROUTING_KEY+DEAD_LETTER_ROUTING_KEY_POSTFIX);
+    }
+
     @Bean
     public Queue billsQueue(){
         return new Queue(BILLS_QUEUE_NAME);

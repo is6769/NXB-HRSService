@@ -6,6 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
 import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
+import org.example.hrsservice.exceptions.CannotChargeCallException;
+import org.example.hrsservice.exceptions.InvalidCallMetadataException;
+import org.example.hrsservice.exceptions.NoSuchSubscriberTariffException;
+import org.example.hrsservice.exceptions.NoSuchTariffPresent;
 import org.example.hrsservice.repositories.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,9 +52,12 @@ public class TariffService {
         RuleFinderService ruleFinderService = new RuleFinderService();
 
         JsonNode metadata = usageWithMetadataDTO.metadata();
+
+        validateMetadata(metadata);
+
         systemDatetimeService.setSystemDatetime(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
         chargeExpiredSubscribersTariffs(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
-        SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(usageWithMetadataDTO.subscriberId()).orElseThrow(RuntimeException::new);
+        SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(usageWithMetadataDTO.subscriberId()).orElseThrow(()->new NoSuchSubscriberTariffException("The subscriber with id: %d dont have active tariff.".formatted(usageWithMetadataDTO.subscriberId())));
         Tariff tariff = subscriberTariff.getTariff();
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
         tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
@@ -99,7 +106,12 @@ public class TariffService {
 
             }
         }
-        return null;
+        throw new CannotChargeCallException("Cannot charge call: %s".formatted(usageWithMetadataDTO.toString()));
+    }
+
+    private void validateMetadata(JsonNode metadata) {
+        if (!metadata.has("finishDateTime")) throw new InvalidCallMetadataException("finishDateTime");
+        if (!metadata.has("durationInMinutes")) throw new InvalidCallMetadataException("durationInMinutes");
     }
 
     private TarifficationBillDTO calculateTotalBill(List<TarifficationBillDTO> tarifficationBills) {
@@ -136,7 +148,7 @@ public class TariffService {
     @Transactional
     public void setTariffForSubscriber(Long subscriberId, Long tariffId,LocalDateTime systemDatetime){
 
-        Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(RuntimeException::new);
+        Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(()->new NoSuchTariffPresent("The tariff with id: %d is not present.".formatted(tariffId)));
         Optional<SubscriberTariff> currentSubscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId);
         if (currentSubscriberTariff.isPresent()){
             cleanAllSubscriberInfo(subscriberId);

@@ -4,7 +4,7 @@ import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
 import org.example.hrsservice.entities.ConditionNode;
 import org.example.hrsservice.entities.PackageRule;
 import org.example.hrsservice.entities.RuleType;
-import org.springframework.stereotype.Service;
+import org.example.hrsservice.exceptions.UnsupportedOperatorException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +20,7 @@ public class RuleFinderService {
                 }
             }
         }
-        //TODO throw exception
+        //this is valid answer cause we can have 0 active cost rules,and 0 active limit rules
         return null;
     }
 
@@ -54,7 +54,6 @@ public class RuleFinderService {
     private boolean compareMetadataValueWithConditionValueViaOperator(String metadataValue, String operator, String conditionValue) {
         if ("equals".equals(operator)) return metadataValue.equals(conditionValue);
         if ("not_equals".equals(operator)) return !metadataValue.equals(conditionValue);
-        //TODO throw exception
-        return true;
+        throw new UnsupportedOperatorException("Operator: %s is unsupported.".formatted(operator));
     }
 }

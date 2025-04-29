@@ -26,7 +26,7 @@ public class TarifficationUsageConsumerService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    @RabbitListener(queues = "${const.rabbitmq.tariffication.CALL_USAGE_QUEUE_NAME}")
+    @RabbitListener(queues = "${const.rabbitmq.tariffication.CALL_USAGE_QUEUE_NAME}",errorHandler = "rabbitExceptionsHandler")
     public void consumeCallUsageAndSendBill(UsageWithMetadataDTO usageWithMetadataDTO){
         log.info(usageWithMetadataDTO.toString());
         TarifficationBillDTO bill = tariffService.chargeCall(usageWithMetadataDTO);

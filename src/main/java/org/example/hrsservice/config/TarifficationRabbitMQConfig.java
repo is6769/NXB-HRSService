@@ -31,11 +31,6 @@ public class TarifficationRabbitMQConfig {
 
 
     @Bean
-    public Queue callUsageQueue(){
-        return new Queue(CALL_USAGE_QUEUE_NAME);
-    }
-
-    @Bean
     public TopicExchange deadLetterTarifficationExchange(){
         return new TopicExchange(TARIFFICATION_EXCHANGE_NAME+DEAD_LETTER_EXCHANGE_POSTFIX,false,false);
     }
@@ -51,6 +46,11 @@ public class TarifficationRabbitMQConfig {
                 .bind(deadLetterCallUsageQueue())
                 .to(deadLetterTarifficationExchange())
                 .with(CALL_USAGE_ROUTING_KEY+DEAD_LETTER_ROUTING_KEY_POSTFIX);
+    }
+
+    @Bean
+    public Queue callUsageQueue(){
+        return new Queue(CALL_USAGE_QUEUE_NAME);
     }
 
     @Bean

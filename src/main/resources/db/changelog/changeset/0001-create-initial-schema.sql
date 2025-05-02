@@ -6,18 +6,18 @@ create table if not exists tariffs(
     name                    VARCHAR(200)        NOT NULL,
     description             TEXT                NOT NULL,
     cycle_size              VARCHAR(100)        NOT NULL,
-    is_active               BOOLEAN             NOT NULL,
-    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMP
+    is_active               BOOLEAN             NOT NULL
+--    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+--    updated_at              TIMESTAMP
 );
 
 create table if not exists service_packages(
     id                      BIGSERIAL           PRIMARY KEY,
     name                    VARCHAR(200)        NOT NULL,
     description             TEXT                NOT NULL,
-    service_type            VARCHAR(200)        NOT NULL,
-    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMP
+    service_type            VARCHAR(200)        NOT NULL
+--    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+--    updated_at              TIMESTAMP
 );
 
 create table if not exists package_rules(
@@ -27,9 +27,9 @@ create table if not exists package_rules(
     value                   NUMERIC             NOT NULL,
     unit                    VARCHAR(100)        NOT NULL,
 --    period_type             VARCHAR(100)        NOT NULL,
-    condition               JSONB               NOT NULL,
-    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMP
+    condition               JSONB               NOT NULL
+--    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+--    updated_at              TIMESTAMP
 );
 
 create table if not exists subscriber_tariff(
@@ -37,9 +37,9 @@ create table if not exists subscriber_tariff(
     subscriber_id           BIGINT              NOT NULL,
     tariff_id               BIGINT              NOT NULL REFERENCES tariffs(id),
     cycle_start             TIMESTAMP           NOT NULL,
-    cycle_end               TIMESTAMP           NOT NULL,
-    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMP
+    cycle_end               TIMESTAMP           NOT NULL
+--    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+--    updated_at              TIMESTAMP
 );
 
 create table if not exists subscriber_package_usage(
@@ -49,18 +49,18 @@ create table if not exists subscriber_package_usage(
     used_amount             NUMERIC             NOT NULL,
     limit_amount            NUMERIC             NOT NULL,
     unit                    VARCHAR(100)        NOT NULL,
-    is_deleted              BOOLEAN             DEFAULT FALSE,
-    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMP
+    is_deleted              BOOLEAN             DEFAULT FALSE
+--    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+--    updated_at              TIMESTAMP
 );
 
 create table if not exists tariff_packages(
     id                      BIGSERIAL           PRIMARY KEY,
     tariff_id               BIGINT              NOT NULL REFERENCES tariffs(id),
     service_package_id      BIGINT              NOT NULL REFERENCES service_packages(id),
-    priority                INTEGER             NOT NULL,
-    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMP
+    priority                INTEGER             NOT NULL
+--    created_at              TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+--    updated_at              TIMESTAMP
 );
 
 create table if not exists system_datetime(

@@ -3,6 +3,9 @@ package org.example.hrsservice.services;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.example.hrsservice.dtos.SubscriberTariffDTO;
+import org.example.hrsservice.dtos.TariffDTO;
+import org.example.hrsservice.dtos.TariffPackageDTO;
 import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
 import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
@@ -211,5 +214,10 @@ public class TariffService {
             }
         }
         return totalCost;
+    }
+
+    public SubscriberTariffDTO getSubscriberTariffInfo(Long subscriberId) {
+        SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(RuntimeException::new);
+        return SubscriberTariffDTO.fromEntity(subscriberTariff);
     }
 }

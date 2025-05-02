@@ -4,14 +4,14 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
-@EqualsAndHashCode(callSuper = true)
+
 @Entity
 @Table(name = "tariff_packages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TariffPackage extends CreatedUpdateAtSuperClass{
+public class TariffPackage{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

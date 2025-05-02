@@ -1,5 +1,6 @@
 package org.example.hrsservice.controllers;
 
+import org.example.hrsservice.dtos.SubscriberTariffDTO;
 import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
 import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.services.TariffService;
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-
+//TODO split to two controllers
 @RestController
 public class TariffController {
 
@@ -35,5 +36,10 @@ public class TariffController {
         }
         tariffService.setTariffForSubscriber(subscriberId,tariffId);
         return "Successfully set tariff.";
+    }
+
+    @GetMapping("subscribers/{subscriberId}")
+    public SubscriberTariffDTO getSubscriberTariffInfo(@PathVariable Long subscriberId){
+        return tariffService.getSubscriberTariffInfo(subscriberId);
     }
 }

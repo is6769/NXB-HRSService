@@ -11,14 +11,13 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "package_rules")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PackageRule extends CreatedUpdateAtSuperClass {
+public class PackageRule{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

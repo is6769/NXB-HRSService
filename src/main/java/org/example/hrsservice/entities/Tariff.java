@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = {"subscriberTariffs","tariffPackages"})
-public class Tariff extends CreatedUpdateAtSuperClass{
+public class Tariff{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -7,7 +7,7 @@ import lombok.*;
 
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
+
 @Entity
 @Table(name = "service_packages")
 @Data
@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = {"packageRules","subscriberPackageUsages", "tariffPackages"})
-public class ServicePackage extends CreatedUpdateAtSuperClass {
+public class ServicePackage{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

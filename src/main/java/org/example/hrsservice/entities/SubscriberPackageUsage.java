@@ -6,14 +6,13 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "subscriber_package_usage")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubscriberPackageUsage extends CreatedUpdateAtSuperClass{
+public class SubscriberPackageUsage{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

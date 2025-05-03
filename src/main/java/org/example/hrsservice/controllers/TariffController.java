@@ -1,6 +1,7 @@
 package org.example.hrsservice.controllers;
 
 import org.example.hrsservice.dtos.SubscriberTariffDTO;
+import org.example.hrsservice.dtos.TariffDTO;
 import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
 import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
 import org.example.hrsservice.services.TariffService;
@@ -41,5 +42,10 @@ public class TariffController {
     @GetMapping("subscribers/{subscriberId}")
     public SubscriberTariffDTO getSubscriberTariffInfo(@PathVariable Long subscriberId){
         return tariffService.getSubscriberTariffInfo(subscriberId);
+    }
+
+    @GetMapping("subscribers/{subscriberId}/tariff")
+    public TariffDTO getTariffInfo(@PathVariable Long subscriberId){
+        return tariffService.getTariffInfo(subscriberId);
     }
 }

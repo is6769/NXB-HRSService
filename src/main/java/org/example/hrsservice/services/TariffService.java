@@ -220,4 +220,9 @@ public class TariffService {
         SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(RuntimeException::new);
         return SubscriberTariffDTO.fromEntity(subscriberTariff);
     }
+
+    public TariffDTO getTariffInfo(Long subscriberId) {
+        SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(RuntimeException::new);
+        return TariffDTO.fromEntity(subscriberTariff.getTariff());
+    }
 }

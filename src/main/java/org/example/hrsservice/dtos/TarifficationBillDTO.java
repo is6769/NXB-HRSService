@@ -1,4 +1,4 @@
-package org.example.hrsservice.dtos.responses;
+package org.example.hrsservice.dtos;
 
 import java.math.BigDecimal;
 

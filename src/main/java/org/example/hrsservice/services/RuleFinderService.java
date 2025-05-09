@@ -1,9 +1,10 @@
 package org.example.hrsservice.services;
 
-import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
+import org.example.hrsservice.dtos.UsageWithMetadataDTO;
 import org.example.hrsservice.entities.ConditionNode;
 import org.example.hrsservice.entities.PackageRule;
 import org.example.hrsservice.entities.RuleType;
+import org.example.hrsservice.exceptions.UnsupportedConditionTypeException;
 import org.example.hrsservice.exceptions.UnsupportedOperatorException;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class RuleFinderService {
             return results.contains(true);
         }
 
-        return false;
+        throw new UnsupportedConditionTypeException("Condition type: %s is unsupported.".formatted(conditionType));
     }
 
     private boolean ifCdrMatchesFieldCondition(UsageWithMetadataDTO usageWithMetadataDTO, ConditionNode condition) {
@@ -53,7 +54,7 @@ public class RuleFinderService {
 
     private boolean compareMetadataValueWithConditionValueViaOperator(String metadataValue, String operator, String conditionValue) {
         if ("equals".equals(operator)) return metadataValue.equals(conditionValue);
-        if ("not_equals".equals(operator)) return !metadataValue.equals(conditionValue);
+        else if ("not_equals".equals(operator)) return !metadataValue.equals(conditionValue);
         throw new UnsupportedOperatorException("Operator: %s is unsupported.".formatted(operator));
     }
 }

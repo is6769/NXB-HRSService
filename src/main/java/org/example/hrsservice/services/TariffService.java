@@ -3,16 +3,11 @@ package org.example.hrsservice.services;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
-import org.example.hrsservice.dtos.SubscriberTariffDTO;
 import org.example.hrsservice.dtos.TariffDTO;
-import org.example.hrsservice.dtos.TariffPackageDTO;
-import org.example.hrsservice.dtos.requests.UsageWithMetadataDTO;
-import org.example.hrsservice.dtos.responses.TarifficationBillDTO;
+import org.example.hrsservice.dtos.UsageWithMetadataDTO;
+import org.example.hrsservice.dtos.TarifficationBillDTO;
 import org.example.hrsservice.entities.*;
-import org.example.hrsservice.exceptions.CannotChargeCallException;
-import org.example.hrsservice.exceptions.InvalidCallMetadataException;
-import org.example.hrsservice.exceptions.NoSuchSubscriberTariffException;
-import org.example.hrsservice.exceptions.NoSuchTariffPresent;
+import org.example.hrsservice.exceptions.*;
 import org.example.hrsservice.repositories.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,8 +55,13 @@ public class TariffService {
 
         systemDatetimeService.setSystemDatetime(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
         chargeExpiredSubscribersTariffs(LocalDateTime.parse(metadata.get("finishDateTime").asText()));
-        SubscriberTariff subscriberTariff =subscriberTariffRepository.findBySubscriberId(usageWithMetadataDTO.subscriberId()).orElseThrow(()->new NoSuchSubscriberTariffException("The subscriber with id: %d dont have active tariff.".formatted(usageWithMetadataDTO.subscriberId())));
+
+        Long subscriberId = usageWithMetadataDTO.subscriberId();
+
+        SubscriberTariff subscriberTariff=subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(()->new NoSuchSubscriberTariffException("The subscriber with id: %d dont have active tariff.".formatted(subscriberId)));
         Tariff tariff = subscriberTariff.getTariff();
+        if (!tariff.getIs_active()) throw new SubscriberWithInactiveTariffException("The subscriber with id: %d has inactive tariff with id: %d".formatted(subscriberId,tariff.getId()));
+
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_IdAndServicePackageServiceType(tariff.getId(), ServiceType.MINUTES);
         tariffPackages.sort(Comparator.comparing(TariffPackage::getPriority));
 
@@ -74,11 +74,11 @@ public class TariffService {
             if (limitRule==null){//that is pominutnii
                 PackageRule rateRule = ruleFinderService.findRuleThatMatchesConditionAndType(rules, usageWithMetadataDTO, RuleType.RATE);
                 BigDecimal price= calculateCallPriceAccordingToRule(rateRule,metadata.get("durationInMinutes").asInt());
-                return new TarifficationBillDTO(price,"y.e.", usageWithMetadataDTO.subscriberId());// this the result return it
+                return new TarifficationBillDTO(price,"y.e.", subscriberId);// this the result return it
             }else {//that is with limit
                 //here we should check whether it can be putted in one limit
                 //if no we should divide it and tarificate by parts
-                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findByServicePackageIdAndIsDeletedFalseAndSubscriberId(limitRule.getServicePackage().getId(),usageWithMetadataDTO.subscriberId());
+                SubscriberPackageUsage subscriberPackageUsage = subscriberPackageUsageRepository.findByServicePackageIdAndIsDeletedFalseAndSubscriberId(limitRule.getServicePackage().getId(),subscriberId);
                 BigDecimal usedAmount = subscriberPackageUsage.getUsedAmount();
                 if (usedAmount.compareTo(limitRule.getValue()) < 0){
                     var availableAmount = limitRule.getValue().subtract(usedAmount);
@@ -103,7 +103,7 @@ public class TariffService {
                         subscriberPackageUsage.setUsedAmount(usedAmount.add(neededAmount));
                         subscriberPackageUsageRepository.save(subscriberPackageUsage);
 
-                        return new TarifficationBillDTO(price,"y.e.", usageWithMetadataDTO.subscriberId());
+                        return new TarifficationBillDTO(price,"y.e.", subscriberId);
                     }
                 }
 
@@ -151,7 +151,7 @@ public class TariffService {
     @Transactional
     public void setTariffForSubscriber(Long subscriberId, Long tariffId,LocalDateTime systemDatetime){
 
-        Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(()->new NoSuchTariffPresent("The tariff with id: %d is not present.".formatted(tariffId)));
+        Tariff newTariff = tariffRepository.findActiveById(tariffId).orElseThrow(()->new NoSuchTariffException("The tariff with id: %d is not present.".formatted(tariffId)));
         Optional<SubscriberTariff> currentSubscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId);
         if (currentSubscriberTariff.isPresent()){
             cleanAllSubscriberInfo(subscriberId);
@@ -216,13 +216,13 @@ public class TariffService {
         return totalCost;
     }
 
-    public SubscriberTariffDTO getSubscriberTariffInfo(Long subscriberId) {
-        SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(RuntimeException::new);
-        return SubscriberTariffDTO.fromEntity(subscriberTariff);
+    //TODO think about returning null, cause subscriber can have have no tariff, or we can check this in brt
+    public TariffDTO getSubscribersTariffInfo(Long subscriberId) {
+        SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(()->new NoSuchSubscriberTariffException("This subscriber dont have active tariffs."));
+        return TariffDTO.fromEntity(subscriberTariff.getTariff());
     }
 
-    public TariffDTO getTariffInfo(Long subscriberId) {
-        SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(RuntimeException::new);
-        return TariffDTO.fromEntity(subscriberTariff.getTariff());
+    public TariffDTO getActiveTariffInfo(Long tariffId){
+        return TariffDTO.fromEntity(tariffRepository.findActiveById(tariffId).orElseThrow(()->new NoSuchSubscriberTariffException("No such active tariff.")));
     }
 }

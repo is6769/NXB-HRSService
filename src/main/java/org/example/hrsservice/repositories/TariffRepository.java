@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface TariffRepository extends JpaRepository<Tariff, Long> {
     @Query("SELECT t FROM Tariff t WHERE t.id = :id AND t.is_active = true")
     Optional<Tariff> findActiveById(@Param("id") Long id);
+
+    Optional<Tariff> findTariffById(Long id);
 }

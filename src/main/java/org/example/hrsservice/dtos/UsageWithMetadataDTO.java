@@ -1,4 +1,4 @@
-package org.example.hrsservice.dtos.requests;
+package org.example.hrsservice.dtos;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;

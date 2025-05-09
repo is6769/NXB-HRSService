@@ -161,7 +161,7 @@ public class TariffService {
                 .tariff(newTariff)
                 .subscriberId(subscriberId)
                 .cycleStart(systemDatetime)
-                .cycleEnd(systemDatetime.plusDays(Long.parseLong(newTariff.getCycleSize().split(" ")[0]))) //TODO make more flexible
+                .cycleEnd(systemDatetime.plusDays(Long.parseLong(newTariff.getCycleSize().split(" ")[0]))) // postgres intervals
                 .build();
 
         subscriberTariffRepository.save(newSubscriberTariff);
@@ -216,7 +216,6 @@ public class TariffService {
         return totalCost;
     }
 
-    //TODO think about returning null, cause subscriber can have have no tariff, or we can check this in brt
     public TariffDTO getSubscribersTariffInfo(Long subscriberId) {
         SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(()->new NoSuchSubscriberTariffException("This subscriber dont have active tariffs."));
         return TariffDTO.fromEntity(subscriberTariff.getTariff());

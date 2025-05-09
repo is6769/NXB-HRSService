@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-//TODO split to two controllers
+
 @Slf4j
 @RestController
 public class SubscribersController {

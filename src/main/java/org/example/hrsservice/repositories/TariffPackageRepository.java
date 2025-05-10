@@ -1,6 +1,5 @@
 package org.example.hrsservice.repositories;
 
-import org.example.hrsservice.entities.ServicePackage;
 import org.example.hrsservice.entities.ServiceType;
 import org.example.hrsservice.entities.TariffPackage;
 import org.springframework.data.jpa.repository.JpaRepository;

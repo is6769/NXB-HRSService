@@ -1,6 +1,5 @@
 package org.example.hrsservice.dtos;
 
-import org.example.hrsservice.entities.ServicePackage;
 import org.example.hrsservice.entities.TariffPackage;
 
 public record TariffPackageDTO(

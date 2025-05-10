@@ -1,9 +1,7 @@
 package org.example.hrsservice.dtos;
 
-import org.example.hrsservice.entities.PackageRule;
 import org.example.hrsservice.entities.ServicePackage;
 import org.example.hrsservice.entities.ServiceType;
-import org.example.hrsservice.entities.SubscriberPackageUsage;
 
 import java.util.List;
 

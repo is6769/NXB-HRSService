@@ -16,10 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -116,8 +113,9 @@ public class TariffService {
     }
 
     private void validateMetadata(JsonNode metadata) {
-        if (!metadata.has("finishDateTime")) throw new InvalidCallMetadataException("finishDateTime");
-        if (!metadata.has("durationInMinutes")) throw new InvalidCallMetadataException("durationInMinutes");
+        if (Objects.isNull(metadata)) throw new InvalidCallMetadataException("The metadata cant be null.");
+        if (!metadata.has("finishDateTime")) throw new InvalidCallMetadataException("The field: %s is not present in metadata.".formatted("finishDateTime"));
+        if (!metadata.has("durationInMinutes")) throw new InvalidCallMetadataException("The field: %s is not present in metadata.".formatted("durationInMinutes"));
     }
 
     private TarifficationBillDTO calculateTotalBill(List<TarifficationBillDTO> tarifficationBills) {

@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Сущность, представляющая связь между абонентом и его тарифом.
+ * Хранит информацию о текущем тарифе абонента и периоде его действия.
+ */
 @Entity
 @Table(name = "subscriber_tariff")
 @Data
@@ -21,17 +25,30 @@ public class SubscriberTariff {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Идентификатор абонента.
+     */
     @Column(name = "subscriber_id", nullable = false)
     private Long subscriberId;
 
 
+    /**
+     * Связанный тариф.
+     * Использует {@link JsonManagedReference} для управления сериализацией JSON.
+     */
     @JsonManagedReference
     @ManyToOne
     @JoinColumn(name = "tariff_id")
     private Tariff tariff;
 
+    /**
+     * Дата и время начала действия текущего цикла тарифа.
+     */
     private LocalDateTime cycleStart;
 
+    /**
+     * Дата и время окончания действия текущего цикла тарифа.
+     */
     private LocalDateTime cycleEnd;
 
 

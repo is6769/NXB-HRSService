@@ -21,6 +21,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Тесты для класса {@link DLQMessagePublisher}.
+ * Проверяет корректность публикации сообщений в Dead Letter Queue (DLQ).
+ */
 @ExtendWith(MockitoExtension.class)
 class DLQMessagePublisherTest {
 
@@ -36,7 +40,7 @@ class DLQMessagePublisherTest {
     private final String exchangePostfix = ".dlx";
     private final String routingKeyPostfix = ".dlq";
     private final LocalDateTime testDateTime = LocalDateTime.of(2023, 1, 1, 12, 0);
-    
+
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(dlqMessagePublisher, "DEAD_LETTER_EXCHANGE_POSTFIX", exchangePostfix);
@@ -44,6 +48,10 @@ class DLQMessagePublisherTest {
         when(systemDatetimeService.getSystemDatetime()).thenReturn(testDateTime);
     }
 
+    /**
+     * Тестирует метод {@link DLQMessagePublisher#publishToDLQ(Message, Throwable)}.
+     * Проверяет, что сообщение обогащается необходимой информацией об ошибке и отправляется в DLQ.
+     */
     @Test
     void publishToDLQ_shouldEnhanceMessageAndSend() {
         String originalExchange = "test-exchange";

@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Сущность, представляющая системное время в приложении.
+ */
 @Entity
 @Table(name = "system_datetime")
 @Data
@@ -19,9 +22,15 @@ import java.time.LocalDateTime;
 @Builder
 public class SystemDatetime {
 
+    /**
+     * Уникальный идентификатор записи системного времени (обычно 1L).
+     */
     @Id
     private Long id;
 
+    /**
+     * Значение системного времени.
+     */
     @Column(name = "system_datetime")
     private LocalDateTime systemDatetime;
 }

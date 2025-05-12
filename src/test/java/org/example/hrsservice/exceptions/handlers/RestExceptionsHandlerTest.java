@@ -18,6 +18,10 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+/**
+ * Тесты для класса {@link RestExceptionsHandler}.
+ * Проверяет корректность обработки различных исключений и формирования {@link ExceptionDTO}.
+ */
 @ExtendWith(MockitoExtension.class)
 class RestExceptionsHandlerTest {
 
@@ -39,6 +43,10 @@ class RestExceptionsHandlerTest {
         when(request.getRequestURL()).thenReturn(new StringBuffer(testUrl));
     }
 
+    /**
+     * Тестирует обработку {@link CannotChargeCallException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом NOT_FOUND.
+     */
     @Test
     @DisplayName("handleCannotChargeCallException should return correct ExceptionDTO with NOT_FOUND status")
     void handleCannotChargeCallException_returnsCorrectExceptionDTO() {
@@ -54,6 +62,10 @@ class RestExceptionsHandlerTest {
         assertThat(result.url()).isEqualTo(testUrl);
     }
 
+    /**
+     * Тестирует обработку {@link InvalidCallMetadataException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом BAD_REQUEST.
+     */
     @Test
     @DisplayName("handleInvalidCallMetadataException should return correct ExceptionDTO with BAD_REQUEST status")
     void handleInvalidCallMetadataException_returnsCorrectExceptionDTO() {
@@ -69,6 +81,10 @@ class RestExceptionsHandlerTest {
         assertThat(result.url()).isEqualTo(testUrl);
     }
 
+    /**
+     * Тестирует обработку {@link NoSuchSubscriberTariffException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом BAD_REQUEST.
+     */
     @Test
     @DisplayName("handleNoSuchSubscriberTariffException should return correct ExceptionDTO with BAD_REQUEST status")
     void handleNoSuchSubscriberTariffException_returnsCorrectExceptionDTO() {
@@ -84,6 +100,10 @@ class RestExceptionsHandlerTest {
         assertThat(result.url()).isEqualTo(testUrl);
     }
 
+    /**
+     * Тестирует обработку {@link NoSuchTariffException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом NOT_FOUND.
+     */
     @Test
     @DisplayName("handleNoSuchTariffException should return correct ExceptionDTO with NOT_FOUND status")
     void handleNoSuchTariffException_returnsCorrectExceptionDTO() {
@@ -99,6 +119,10 @@ class RestExceptionsHandlerTest {
         assertThat(result.url()).isEqualTo(testUrl);
     }
 
+    /**
+     * Тестирует обработку {@link SubscriberWithInactiveTariffException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом BAD_REQUEST.
+     */
     @Test
     @DisplayName("handleSubscriberWithInactiveTariffException should return correct ExceptionDTO with BAD_REQUEST status")
     void handleSubscriberWithInactiveTariffException_returnsCorrectExceptionDTO() {
@@ -114,6 +138,10 @@ class RestExceptionsHandlerTest {
         assertThat(result.url()).isEqualTo(testUrl);
     }
 
+    /**
+     * Тестирует обработку {@link UnsupportedConditionTypeException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом INTERNAL_SERVER_ERROR.
+     */
     @Test
     @DisplayName("handleUnsupportedConditionTypeException should return correct ExceptionDTO with INTERNAL_SERVER_ERROR status")
     void handleUnsupportedConditionTypeException_returnsCorrectExceptionDTO() {
@@ -129,6 +157,10 @@ class RestExceptionsHandlerTest {
         assertThat(result.url()).isEqualTo(testUrl);
     }
 
+    /**
+     * Тестирует обработку {@link UnsupportedOperatorException}.
+     * Ожидается, что будет возвращен {@link ExceptionDTO} с HTTP статусом INTERNAL_SERVER_ERROR.
+     */
     @Test
     @DisplayName("handleUnsupportedOperatorException should return correct ExceptionDTO with INTERNAL_SERVER_ERROR status")
     void handleUnsupportedOperatorException_returnsCorrectExceptionDTO() {

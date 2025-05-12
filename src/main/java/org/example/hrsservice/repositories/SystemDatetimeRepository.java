@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
+/**
+ * Репозиторий для управления сущностью {@link SystemDatetime}.
+ */
 public interface SystemDatetimeRepository extends JpaRepository<SystemDatetime, Long> {
 
     @Override

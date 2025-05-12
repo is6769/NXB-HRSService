@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Индикатор состояния здоровья, проверяющий регистрацию сервиса в Eureka.
+ * Используется Spring Boot Actuator для предоставления информации о статусе регистрации.
+ */
 @Component
 public class EurekaRegistrationHealthIndicator implements HealthIndicator {
 
@@ -22,6 +26,10 @@ public class EurekaRegistrationHealthIndicator implements HealthIndicator {
         this.eurekaDiscoveryClient = eurekaDiscoveryClient;
     }
 
+    /**
+     * Выполняет проверку состояния регистрации сервиса в Eureka.
+     * @return {@link Health} объект, указывающий статус (UP, DOWN) и детали проверки.
+     */
     @Override
     public Health health() {
         try {

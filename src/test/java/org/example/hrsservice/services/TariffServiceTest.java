@@ -31,6 +31,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Тесты для класса {@link TariffService}.
+ * Проверяет логику тарификации звонков, управления тарифами абонентов и взаимодействия с другими компонентами.
+ */
 @ExtendWith(MockitoExtension.class)
 class TariffServiceTest {
 

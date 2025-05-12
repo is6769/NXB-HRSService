@@ -18,13 +18,24 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Сервис для управления тарифами и тарификацией звонков.
+ * Отвечает за назначение тарифов абонентам, расчет стоимости звонков,
+ * обработку пакетов услуг и взаимодействие с системой биллинга через RabbitMQ.
+ */
 @Service
 @Slf4j
 public class TariffService {
 
+    /**
+     * Ключ маршрутизации для отправки счетов в RabbitMQ.
+     */
     @Value("${const.rabbitmq.bills.BILLS_ROUTING_KEY}")
     private String BILLS_ROUTING_KEY;
 
+    /**
+     * Имя обменника для отправки счетов в RabbitMQ.
+     */
     @Value("${const.rabbitmq.bills.BILLS_EXCHANGE_NAME}")
     private String BILLS_EXCHANGE_NAME;
 
@@ -36,6 +47,16 @@ public class TariffService {
     private final SystemDatetimeService systemDatetimeService;
     private final RabbitTemplate rabbitTemplate;
 
+    /**
+     * Конструктор сервиса тарифов.
+     * @param tariffRepository Репозиторий тарифов.
+     * @param subscriberTariffRepository Репозиторий тарифов абонентов.
+     * @param tariffPackageRepository Репозиторий пакетов тарифов.
+     * @param packageRuleRepository Репозиторий правил пакетов.
+     * @param subscriberPackageUsageRepository Репозиторий использования пакетов абонентами.
+     * @param systemDatetimeService Сервис системного времени.
+     * @param rabbitTemplate Шаблон для работы с RabbitMQ.
+     */
     public TariffService(TariffRepository tariffRepository, SubscriberTariffRepository subscriberTariffRepository, TariffPackageRepository tariffPackageRepository, PackageRuleRepository packageRuleRepository, SubscriberPackageUsageRepository subscriberPackageUsageRepository, SystemDatetimeService systemDatetimeService, RabbitTemplate rabbitTemplate) {
         this.tariffRepository = tariffRepository;
         this.subscriberTariffRepository = subscriberTariffRepository;
@@ -46,6 +67,15 @@ public class TariffService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
+    /**
+     * Тарифицирует звонок на основе предоставленных данных об использовании и метаданных.
+     * @param usageWithMetadataDTO DTO с информацией об использовании и метаданными звонка.
+     * @return DTO счета за тарификацию.
+     * @throws NoSuchSubscriberTariffException если у абонента нет активного тарифа.
+     * @throws SubscriberWithInactiveTariffException если тариф абонента неактивен.
+     * @throws CannotChargeCallException если не удалось тарифицировать звонок.
+     * @throws InvalidCallMetadataException если метаданные звонка некорректны.
+     */
     public TarifficationBillDTO chargeCall(UsageWithMetadataDTO usageWithMetadataDTO) {
         RuleFinderService ruleFinderService = new RuleFinderService();
 
@@ -112,12 +142,22 @@ public class TariffService {
         throw new CannotChargeCallException("Cannot charge call: %s".formatted(usageWithMetadataDTO.toString()));
     }
 
+    /**
+     * Проверяет корректность метаданных звонка.
+     * @param metadata JSON узел с метаданными.
+     * @throws InvalidCallMetadataException если метаданные отсутствуют или не содержат обязательных полей.
+     */
     private void validateMetadata(JsonNode metadata) {
         if (Objects.isNull(metadata)) throw new InvalidCallMetadataException("The metadata cant be null.");
         if (!metadata.has("finishDateTime")) throw new InvalidCallMetadataException("The field: %s is not present in metadata.".formatted("finishDateTime"));
         if (!metadata.has("durationInMinutes")) throw new InvalidCallMetadataException("The field: %s is not present in metadata.".formatted("durationInMinutes"));
     }
 
+    /**
+     * Рассчитывает общую сумму счета на основе списка счетов за тарификацию.
+     * @param tarifficationBills Список DTO счетов.
+     * @return DTO общего счета.
+     */
     private TarifficationBillDTO calculateTotalBill(List<TarifficationBillDTO> tarifficationBills) {
         BigDecimal totalPrice = new BigDecimal(0);
         Long subscriberId=tarifficationBills.get(0).subscriberId();
@@ -129,11 +169,22 @@ public class TariffService {
         return new TarifficationBillDTO(totalPrice,"y.e.",subscriberId);
     }
 
+    /**
+     * Рассчитывает стоимость звонка на основе правила тарификации (RATE) и длительности звонка.
+     * @param rateRule Правило тарификации типа RATE.
+     * @param durationInMinutes Длительность звонка в минутах.
+     * @return Рассчитанная стоимость.
+     */
     private BigDecimal calculateCallPriceAccordingToRule(PackageRule rateRule, Integer durationInMinutes) {
         return rateRule.getValue().multiply(new BigDecimal(durationInMinutes));
     }
 
-    //@Transactional
+    /**
+     * Обрабатывает истекшие тарифы абонентов.
+     * Для каждого абонента с истекшим тарифом (кроме тарифов с циклом "0 дней")
+     * выполняется переподключение тарифа на новый период.
+     * @param systemDatetime Текущее системное время.
+     */
     public void chargeExpiredSubscribersTariffs(LocalDateTime systemDatetime){
         List<SubscriberTariff> expiredList = subscriberTariffRepository.findAllByCycleEndBeforeAndTariff_CycleSizeNot(systemDatetime,"0 days");
         expiredList.forEach(expired -> {
@@ -143,12 +194,28 @@ public class TariffService {
     }
 
 
+    /**
+     * Устанавливает тариф для абонента, используя текущее системное время.
+     * @param subscriberId ID абонента.
+     * @param tariffId ID тарифа.
+     * @throws NoSuchTariffException если указанный тариф не найден или неактивен.
+     */
     @Transactional
     public void setTariffForSubscriber(Long subscriberId, Long tariffId){
         LocalDateTime systemDatetime = systemDatetimeService.getSystemDatetime();
         setTariffForSubscriber(subscriberId,tariffId, systemDatetime);
     }
 
+    /**
+     * Устанавливает тариф для абонента с указанием системного времени.
+     * Если у абонента уже есть тариф, он удаляется вместе со связанной информацией об использовании пакетов.
+     * Создается новая запись о тарифе абонента, инициализируются пакеты услуг с лимитами.
+     * Выставляется счет за подключение тарифа.
+     * @param subscriberId ID абонента.
+     * @param tariffId ID тарифа.
+     * @param systemDatetime Системное время, на которое устанавливается тариф.
+     * @throws NoSuchTariffException если указанный тариф не найден или неактивен.
+     */
     @Transactional
     public void setTariffForSubscriber(Long subscriberId, Long tariffId,LocalDateTime systemDatetime){
 
@@ -188,10 +255,18 @@ public class TariffService {
         produceBill(new TarifficationBillDTO(calculateTariffPackagesPrice(newTariff),"y.e.",subscriberId));
     }
 
+    /**
+     * Отправляет счет в систему биллинга через RabbitMQ.
+     * @param bill DTO счета.
+     */
     public void produceBill(TarifficationBillDTO bill){
         rabbitTemplate.convertAndSend(BILLS_EXCHANGE_NAME,BILLS_ROUTING_KEY,bill);
     }
 
+    /**
+     * Удаляет всю информацию о тарифе и использовании пакетов для указанного абонента.
+     * @param subscriberId ID абонента.
+     */
     public void cleanAllSubscriberInfo(Long subscriberId){
         List<SubscriberPackageUsage> subscriberPackageUsages = subscriberPackageUsageRepository.findAllBySubscriberIdAndIsDeletedFalse(subscriberId);
         SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).get();
@@ -203,6 +278,11 @@ public class TariffService {
         subscriberTariffRepository.delete(subscriberTariff);
     }
 
+    /**
+     * Рассчитывает стоимость подключения тарифа на основе правил типа COST в его пакетах.
+     * @param tariff Тариф.
+     * @return Общая стоимость подключения.
+     */
     private BigDecimal calculateTariffPackagesPrice(Tariff tariff){
         List<TariffPackage> tariffPackages = tariffPackageRepository.findAllByTariff_Id(tariff.getId());
         BigDecimal totalCost = new BigDecimal(0);
@@ -217,11 +297,23 @@ public class TariffService {
         return totalCost;
     }
 
+    /**
+     * Получает информацию о текущем тарифе абонента.
+     * @param subscriberId ID абонента.
+     * @return DTO с информацией о тарифе.
+     * @throws NoSuchSubscriberTariffException если у абонента нет активного тарифа.
+     */
     public TariffDTO getSubscribersTariffInfo(Long subscriberId) {
         SubscriberTariff subscriberTariff = subscriberTariffRepository.findBySubscriberId(subscriberId).orElseThrow(()->new NoSuchSubscriberTariffException("This subscriber dont have active tariffs."));
         return TariffDTO.fromEntity(subscriberTariff.getTariff());
     }
 
+    /**
+     * Получает информацию об активном тарифе по его ID.
+     * @param tariffId ID тарифа.
+     * @return DTO с информацией о тарифе.
+     * @throws NoSuchSubscriberTariffException если тариф не найден или неактивен.
+     */
     public TariffDTO getActiveTariffInfo(Long tariffId){
         return TariffDTO.fromEntity(tariffRepository.findActiveById(tariffId).orElseThrow(()->new NoSuchSubscriberTariffException("No such active tariff.")));
     }

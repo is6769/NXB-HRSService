@@ -10,6 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Сервис для управления системным временем в приложении.
+ * Позволяет инициализировать, получать и устанавливать текущее системное время,
+ * которое используется для корректной тарификации и обработки событий.
+ */
 @Service
 @Slf4j
 public class SystemDatetimeService {
@@ -21,6 +26,11 @@ public class SystemDatetimeService {
     }
 
 
+    /**
+     * Инициализирует системное время при запуске приложения, если оно еще не установлено.
+     * Создает запись в базе данных с временем, сдвинутым на год назад от текущего момента.
+     * Выполняется в транзакции с уровнем изоляции SERIALIZABLE для предотвращения гонок при инициализации.
+     */
     @PostConstruct
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void tryToInitializeSystemDatetime(){
@@ -29,11 +39,20 @@ public class SystemDatetimeService {
         }
     }
 
+    /**
+     * Возвращает текущее системное время.
+     * @return {@link LocalDateTime}, представляющее текущее системное время.
+     */
     public LocalDateTime getSystemDatetime(){
         return systemDatetimeRepository.findAll().get(0).getSystemDatetime();
     }
 
 
+    /**
+     * Устанавливает новое системное время.
+     * Обновление происходит только если новое время позже текущего системного времени.
+     * @param newSystemDatetime Новое системное время.
+     */
     public void setSystemDatetime(LocalDateTime newSystemDatetime){
         var systemDatetime = getSystemDatetimeEntity();
         if (newSystemDatetime.isAfter(systemDatetime.getSystemDatetime())){
@@ -42,6 +61,10 @@ public class SystemDatetimeService {
         }
     }
 
+    /**
+     * Возвращает сущность {@link SystemDatetime} из базы данных.
+     * @return Сущность системного времени.
+     */
     private SystemDatetime getSystemDatetimeEntity(){
         return systemDatetimeRepository.findAll().get(0);
     }

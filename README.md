@@ -187,6 +187,17 @@ HRS-сервис выполняет следующие функции:
 - **Lombok** для уменьшения шаблонного кода
 - **SLF4J** для логирования
 
+### База данных
+
+**PostgreSQL**
+- JDBC URL: `jdbc:postgresql://localhost:5433/hrs-db`
+- Пользователь: `postgres`
+- Пароль: `postgres`
+- Схема: `public`
+
+В контейнерной среде:
+- JDBC URL: `jdbc:postgresql://hrs-db:5432/hrs-db`
+
 ### Мониторинг
 
 Сервис включает компонент мониторинга `EurekaRegistrationHealthIndicator`, который:
